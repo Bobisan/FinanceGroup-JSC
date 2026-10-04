@@ -3,7 +3,7 @@
 
 The goal of this exercise was to to do basic reconnaissance through nmap and fluff, determine which mitre attack navigator techinques their use falls into and to scan a host running known vulnerabilities, on the virtual machines that were setup in the last lab.
 
-For this purpose I had to setup NAT on the gateway vm, so that the server vm could access the internet. After that I deployed the docker enviornemnt with the cve-2025-3248 vulnerability from vulhub. After that I installed nmap and ffuf on the gateway vm, so that I can use them to find a vulnerability (while pretending that I don't know the cve number from vulhub).
+For this purpose I had to setup NAT on the gateway vm, so that the server vm could access the internet. After that I deployed the docker enviornemnt with the cve-2025-3248 and cve-2025-1974 vulnerabilities from vulhub. After that I installed nmap and ffuf on the gateway vm, so that I can use them to find the vulnerabilities (while pretending that I don't know the cve number from vulhub).
 
 ##Vulnerability Search Proccess
 
@@ -45,9 +45,11 @@ I realised that the server has a http service running on port 7680, so I decided
   </body>
 </html>`
 
-(the output also shows that I didn't set up the container correctly, but that's beside the point)
+It's an error telling me that I need to enable javascript, because curl by itself doesn't render javascript elemnts, but it also told me that the title of the service is "Langflow". After searching it up I found out it's some local ai platform and found out it has a CVE entry - CVE-2025-3248 (the very same one from the start). From there I learned that Langflow instances before version 1.3.0 have a vulnerability, so I curled http://192.168.100.3:7860/api/v1/version, which gave me the output:
 
-From where I searched for "Langflow" and found out it's some local ai platform, so I searched for "Langflow CVE", which showed me results for CVE-2025-3248 (the very same one from the start), which can be found on langflow instances prior to version 1.3.0.
+`{"version":"1.2.0","main_version":"1.2.0","package":"Langflow"}`
+
+That confirms that the server is running a compromised version of Langflow. That is one of the two big vulnerabilities.
 
 ##Detected Vulnerability
 
