@@ -1,18 +1,19 @@
-##Setup
+## Подготовка
 
-The goal of this exercise was to to do basic reconnaissance through nmap and fluff, determine which mitre attack navigator techinques their use falls into and to scan a host running known vulnerabilities, on the virtual machines that were setup in the last lab.
+Целта на упражнението беше да се направи основно разузнаване (reconnaissance) с nmap и ffuf, да се определи към кои техники от MITRE ATT&CK Navigator спада използването им и да се сканира хост с известни уязвимости, на виртуалните машини, настроени в предишното упражнение.
 
-For this purpose I had to setup NAT on the gateway vm, so that the server vm could access the internet. After that I deployed the docker enviornemnt with the cve-2025-3248 and cve-2025-1974 vulnerabilities from vulhub. After that I installed nmap and ffuf on the gateway vm, so that I can use them to find the vulnerabilities (while pretending that I don't know the cve number from vulhub).
+За целта трябваше да настроя NAT на gateway виртуалната машина, за да може server виртуалната машина да има достъп до интернет. След това разгърнах Docker среда с уязвимостите CVE-2025-3248 и CVE-2019-17564 от vulhub. След това инсталирах nmap и ffuf на gateway виртуалната машина, за да мога да ги използвам за откриване на уязвимостите (като се преструвам, че не знам номера на CVE от vulhub).
 
-##Vulnerability Search Proccess
+## Процес на търсене на уязвимости
 
-When I scanned for services and their versions, running on server, using this nmap command:
+Сканирах за услуги и техните версии, работещи на сървъра, със следната nmap команда:
 
 `nmap -p1-10000 -sV 192.168.100.3`
 
-which gave me this output:
+която ми даде този изход:
 
-`Nmap scan report for 192.168.100.3
+```
+Nmap scan report for 192.168.100.3
 Host is up (0.00024s latency).
 Not shown: 65531 closed tcp ports (conn-refused)
 PORT     STATE SERVICE   VERSION
@@ -27,11 +28,13 @@ SF:x20in\x20the\x20whitelist\.\n");
 Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 
 Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-Nmap done: 1 IP address (1 host up) scanned in 19.28 seconds`
+Nmap done: 1 IP address (1 host up) scanned in 19.28 seconds
+```
 
-I realised that the server has a http service running on port 7680, so I decided to curl that page, which gave me this output:
+Забелязах, че сървърът има http услуга на порт 7680, затова реших да направя curl към тази страница, което ми даде следния изход:
 
-`<!doctype html>
+```
+<!doctype html>
 <html lang="en">
   <head>
     <base href="/" />
@@ -53,18 +56,21 @@ I realised that the server has a http service running on port 7680, so I decided
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div style="width: 100vw; height: 100vh" id="root"></div>
   </body>
-</html>`
+</html>
+```
 
-It's an error telling me that I need to enable javascript, because curl by itself doesn't render javascript elemnts, but it also told me that the title of the service is "Langflow". After searching it up I found out it's some local ai platform and found out it has a CVE entry - CVE-2025-3248 (the very same one from the start). From there I learned that Langflow instances before version 1.3.0 have a vulnerability, so I curled http://192.168.100.3:7860/api/v1/version, which gave me the output:
+Това е съобщение за грешка, което ми казва, че трябва да включа JavaScript, защото curl сам по себе си не изпълнява JavaScript елементи, но ми показа и че заглавието на услугата е „Langflow". След като потърсих информация, разбрах, че това е някаква локална AI платформа и че има CVE запис – CVE-2025-3248 (същият от началото). От там научих, че екземплярите на Langflow преди версия 1.3.0 имат уязвимост, затова направих curl към http://192.168.100.3:7860/api/v1/version, което ми даде изхода:
 
-`{"version":"1.2.0","main_version":"1.2.0","package":"Langflow"}`
+```
+{"version":"1.2.0","main_version":"1.2.0","package":"Langflow"}
+```
 
-That confirms that the server is running a compromised version of Langflow. That is one of the two big vulnerabilities.
+Това потвърждава, че сървърът работи с уязвима версия на Langflow. Това е една от двете големи уязвимости.
 
-##Detected Vulnerability
+## Открити уязвимости
 
-CVE 2025-3248
-Langflow versions prior to 1.3.0 are susceptible to code injection in the /api/v1/validate/code endpoint. A remote and unauthenticated attacker can send crafted HTTP requests to execute arbitrary code.
+**CVE-2025-3248**
+Версиите на Langflow преди 1.3.0 са податливи на инжектиране на код в крайната точка `/api/v1/validate/code`. Отдалечен и неавтентикиран атакуващ може да изпраща специално създадени HTTP заявки, за да изпълни произволен код.
 
-CVE-2019-17564
-Unsafe deserialization occurs within a Dubbo application which has HTTP remoting enabled. An attacker may submit a POST request with a Java object in it to completely compromise a Provider instance of Apache Dubbo, if this instance enables HTTP. This issue affected Apache Dubbo 2.7.0 to 2.7.4, 2.6.0 to 2.6.7, and all 2.5.x versions.
+**CVE-2019-17564**
+Небезопасна десериализация възниква в приложение на Dubbo, което има включено HTTP remoting. Атакуващ може да изпрати POST заявка с Java обект в нея, за да компрометира напълно Provider екземпляр на Apache Dubbo, ако този екземпляр има включен HTTP. Проблемът засяга Apache Dubbo от 2.7.0 до 2.7.4, от 2.6.0 до 2.6.7 и всички версии 2.5.x.
