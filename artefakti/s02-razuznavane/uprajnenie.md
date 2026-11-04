@@ -13,10 +13,21 @@ When I scanned for services and their versions, running on server, using this nm
 which gave me this output:
 
 `Nmap scan report for 192.168.100.3
-Host is up (0.00047s latency).
-Not shown: 9999 closed tcp ports (conn-refused)
-PORT     STATE SERVICE VERSION
-7860/tcp open  http    Uvicorn`
+Host is up (0.00024s latency).
+Not shown: 65531 closed tcp ports (conn-refused)
+PORT     STATE SERVICE   VERSION
+22/tcp   open  ssh       OpenSSH 10.0p2 Debian 7+deb13u4 (protocol 2.0)
+2181/tcp open  eforward?
+7860/tcp open  http      Uvicorn
+8080/tcp open  http      Apache Tomcat (language: en)
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
+SF-Port2181-TCP:V=7.95%I=7%D=10/6%Time=6AC560E9%P=x86_64-pc-linux-gnu%r(Me
+SF:mcache,39,"stat\x20is\x20not\x20executed\x20because\x20it\x20is\x20not\
+SF:x20in\x20the\x20whitelist\.\n");
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 19.28 seconds`
 
 I realised that the server has a http service running on port 7680, so I decided to curl that page, which gave me this output:
 
